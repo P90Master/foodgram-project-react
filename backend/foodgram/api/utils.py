@@ -2,7 +2,6 @@ from django.http.response import HttpResponse
 
 from recipes.models import IngredientRecipeRelation
 
-
 def shopping_cart_downloader(shopping_cart_objects):
         shopping_cart = {}
         response_list = []

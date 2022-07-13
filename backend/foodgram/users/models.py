@@ -36,9 +36,7 @@ class User(AbstractUser):
         return self.role in self.STAFF
 
     def is_subscribed(self, author):
-        followings = self.followings.all()
-
-        return author in [following.author for following in followings]
+        return Follow.objects.filter(user=self, author=author).exists()
 
 
 class Follow(models.Model):

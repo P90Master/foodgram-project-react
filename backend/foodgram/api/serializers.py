@@ -8,7 +8,6 @@ from rest_framework.exceptions import APIException
 from django.core.files.base import ContentFile
 
 from recipes.models import Tag, Ingredient, Recipe, IngredientRecipeRelation
-
 from .filters import queryset_cutter
 
 User = get_user_model()
@@ -160,7 +159,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     tags = TagSerializer(many=True)
-    ingredients = ingredients = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField()
 
     def get_ingredients(self, recipe):
         relation = IngredientRecipeRelation.objects.filter(recipe=recipe)
