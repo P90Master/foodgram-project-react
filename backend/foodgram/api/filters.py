@@ -32,15 +32,25 @@ class RecipeFilter(FoodgramBaseFilter):
     is_favorited = rest_framework.BooleanFilter(
         method='is_favorited_filter'
     )
+    is_in_shopping_cart = rest_framework.BooleanFilter(
+        method='is_in_shopping_cart_filter',
+    )
 
     def is_favorited_filter(self, queryset, name, value):
         user = self.request.user
 
-        wanted_ids = [
-            rec.id for rec in queryset if rec.is_favorited(user) == value
-        ]
+        if value:
+            return queryset.filter(users__user=user)
 
-        return queryset.filter(id__in=wanted_ids)
+        return queryset.exclude(users__user=user)
+    
+    def is_in_shopping_cart_filter(self, queryset, name, value):
+        user = self.request.user
+
+        if value:
+            return queryset.filter(in_shopping_cart__user=user)
+
+        return queryset.exclude(in_shopping_cart__user=user)
 
     class Meta:
         model = Recipe

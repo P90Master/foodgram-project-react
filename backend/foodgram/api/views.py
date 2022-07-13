@@ -3,12 +3,8 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Avg
 from django.db.utils import IntegrityError
-from django.http.response import HttpResponse
-
 from django_filters.rest_framework import DjangoFilterBackend
-
 from djoser.utils import logout_user
-
 from rest_framework import viewsets, filters, status, mixins, generics
 from rest_framework.views import APIView
 from rest_framework.decorators import action, api_view, permission_classes
@@ -26,7 +22,6 @@ from .permissions import (
     IsAuthorOrReadOnly,
     NoRoleChange,
 )
-
 from .serializers import (
     UserSerializer,
     UserSetPasswordSerializer,
@@ -36,15 +31,13 @@ from .serializers import (
     RecipeSerializer,
     PostRecipeSerializer
 )
-
 from .pagination import FoodgramPagination
-
 from .filters import (
     FoodgramBaseFilter,
     RecipeFilter,
     IngredientFilter,
 )
-
+from .utils import shopping_cart_downloader
 from users.models import Follow
 from recipes.models import (
     Ingredient,
@@ -56,6 +49,29 @@ from recipes.models import (
 )
 
 User = get_user_model()
+
+def objects_relations_manager(this, model, request, error, **kwargs):
+    if request.method == 'DELETE':
+        try:
+            relation = model.objects.get(
+                **kwargs
+            )
+            relation.delete()
+
+        except model.DoesNotExist:
+            error = {
+                'error': error
+            }
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
+            
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    model.objects.get_or_create(**kwargs)
+    obj = list(kwargs.values())[1]
+        
+    context = this.get_serializer(obj).data
+        
+    return Response(context, status=status.HTTP_200_OK)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -126,30 +142,17 @@ class UserViewSet(viewsets.ModelViewSet):
     def subscribe(self, request, user_id):
         author = get_object_or_404(User, pk=user_id)
         user = request.user
+        error_msg = 'Вы не были подписаны на этого пользователя'
 
-        if request.method == 'DELETE':
-            try:
-                followship = Follow.objects.get(
-                    user=user,
-                    author=author
-                )
-                followship.delete()
+        if user == author:
+            error = {
+                'error': 'Вы не можете подписаться сами на себя'
+            }
+            return Response(error, status=status.HTTP_400_BAD_REQUEST)
 
-            except Follow.DoesNotExist:
-                error = {
-                    'error': 'Вы не были подписаны на этого пользователя'
-                }
-                return Response(error, status=status.HTTP_400_BAD_REQUEST)
-            
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        else:
-            if user != author:
-                Follow.objects.get_or_create(user=user, author=author)
-        
-            context = self.get_serializer(author).data
-        
-            return Response(context, status=status.HTTP_200_OK)
+        return objects_relations_manager(
+            self, Follow, request, error_msg, user=user, author=author
+        )
     
     @action(
         methods=['get',],
@@ -162,8 +165,8 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def subscribtions(self, request):
         user = request.user
-        wanted_ids = [following.author.id for following in user.followings.all()]
-        subscriptions = User.objects.filter(id__in=wanted_ids).order_by('-id')
+        followings = user.followings.all()
+        subscriptions = User.objects.filter(followers__in=followings).order_by('-id')
         page = self.paginate_queryset(subscriptions)
 
         if page is not None:
@@ -213,35 +216,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, recipe_id):
         recipe = get_object_or_404(Recipe, pk=recipe_id)
         user = request.user
+        error_msg = 'Вы не добавляли этот рецепт в избранное'
 
-        if request.method == 'DELETE':
-            try:
-                favoriteship = Favorite.objects.get(
-                    user=user,
-                    recipe=recipe
-                )
-                favoriteship.delete()
-
-            except Favorite.DoesNotExist:
-                error = {
-                    'error': 'Вы не добавляли этот рецепт в избранное'
-                }
-                return Response(error, status=status.HTTP_400_BAD_REQUEST)
-            
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        else:
-            Favorite.objects.get_or_create(user=user, recipe=recipe)
-
-            serializer = self.get_serializer(recipe)
-            context = {
-                'id': serializer.data.get('id'),
-                'name': serializer.data.get('name'),
-                'image': serializer.data.get('image'),
-                'cooking_time': serializer.data.get('cooking_time'),
-            }
-        
-            return Response(context, status=status.HTTP_200_OK)
+        return objects_relations_manager(
+            self, Favorite, request, error_msg, user=user, recipe=recipe
+        )
 
     @action(
         methods=['post', 'delete'],
@@ -252,35 +231,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def shopping_cart(self, request, recipe_id):
         recipe = get_object_or_404(Recipe, pk=recipe_id)
         user = request.user
+        error_msg = 'Вы не добавляли этот рецепт в корзину'
 
-        if request.method == 'DELETE':
-            try:
-                shopping_cart = ShoppingCart.objects.get(
-                    user=user,
-                    recipe=recipe
-                )
-                shopping_cart.delete()
-
-            except Favorite.DoesNotExist:
-                error = {
-                    'error': 'Вы не добавляли этот рецепт в корзину'
-                }
-                return Response(error, status=status.HTTP_400_BAD_REQUEST)
-            
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        else:
-            ShoppingCart.objects.get_or_create(user=user, recipe=recipe)
-
-            serializer = self.get_serializer(recipe)
-            context = {
-                'id': serializer.data.get('id'),
-                'name': serializer.data.get('name'),
-                'image': serializer.data.get('image'),
-                'cooking_time': serializer.data.get('cooking_time'),
-            }
-        
-            return Response(context, status=status.HTTP_200_OK)
+        return objects_relations_manager(
+            self, ShoppingCart, request, error_msg, user=user, recipe=recipe
+        )
     
     @action(
         methods=['get',],
@@ -291,46 +246,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         user = request.user
         shopping_cart_objects = user.shopping_cart.all()
-        shopping_cart = {}
-        response_list = []
-
-        # Сборка ингредиентов в словарь
-        for obj in shopping_cart_objects:
-            recipe = obj.recipe
-            ingredients = IngredientRecipeRelation.objects.filter(
-                recipe=recipe
-            )
-
-            for ingredient in ingredients:
-                name = ingredient.ingredient.name
-                amount = ingredient.amount
-                measurement_unit = ingredient.ingredient.measurement_unit
-
-                if name in shopping_cart.keys():
-                    shopping_cart[name]['amount'] += amount
-
-                else:
-                    shopping_cart[name] = {
-                        'amount': amount,
-                        'measurement_unit': measurement_unit
-                    }
         
-        # Формирование списка
-        for name in shopping_cart.keys():
-            subject = shopping_cart[name]
-            response_list.append(
-                f'{name}: {subject["amount"]} {subject["measurement_unit"]}\n'
-        )
-            
-        response_obj = HttpResponse(
-            response_list,
-            'Content-Type: text/plain'
-        )
-        response_obj['Content-Disposition'] = (
-            'attachment;' 'filename="shopping_cart.txt"'
-        )
-    
-        return response_obj
+        return shopping_cart_downloader(shopping_cart_objects)
 
 
 class TagViewSet(viewsets.ModelViewSet):

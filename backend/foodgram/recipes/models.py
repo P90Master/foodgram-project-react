@@ -72,18 +72,13 @@ class Recipe(models.Model):
         Ingredient,
         through='IngredientRecipeRelation',
         related_name='recipes',
-        # through_fields=('recipe', 'ingredient')
     )
 
     def is_favorited(self, user):
-        favorites = self.users.all()
-
-        return user in [favoriteship.user for favoriteship in favorites]
+        return Favorite.objects.filter(user=user, recipe=self).exists()
 
     def is_in_shopping_cart(self, user):
-        users_list = self.in_shopping_cart.all()
-
-        return user in [shopping_cart.user for shopping_cart in users_list]
+        return ShoppingCart.objects.filter(user=user, recipe=self).exists()
 
     class Meta:
         ordering = ['id']

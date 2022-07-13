@@ -13,6 +13,19 @@ from .filters import queryset_cutter
 
 User = get_user_model()
 
+def relation_creator(instance, ingredients):
+    relations = (
+        IngredientRecipeRelation(
+            recipe=instance,
+            ingredient=Ingredient.objects.get(id=ingredient['id']),
+                amount=ingredient['amount']
+        ) for ingredient in ingredients
+    )
+
+    IngredientRecipeRelation.objects.bulk_create(
+            relations
+    )
+
 
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
@@ -20,7 +33,9 @@ class Base64ImageField(serializers.ImageField):
             format, imgstr = data.split(';base64,')
             ext = format.split('/')[-1]
             id = uuid.uuid4()
-            data = ContentFile(base64.b64decode(imgstr), name = id.urn[9:] + '.' + ext)
+            data = ContentFile(
+                base64.b64decode(imgstr), name = id.urn[9:] + '.' + ext
+            )
 
         return super(Base64ImageField, self).to_internal_value(data)
 
@@ -112,21 +127,12 @@ class UserSetPasswordSerializer(serializers.Serializer):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
-    def validate_name(self, name):
-        return name.lower()
-    
-    def validate_measurement_unit(self, measurement_unit):
-        return measurement_unit.lower()
-
     class Meta:
         fields = ('name', 'measurement_unit')
         model = Ingredient
 
 
 class TagSerializer(serializers.ModelSerializer):
-    def validate_name(self, name):
-        return name.lower()
-
     class Meta:
         fields = ('name', 'slug', 'color')
         model = Tag
@@ -194,14 +200,8 @@ class PostRecipeSerializer(RecipeSerializer):
         recipe = Recipe.objects.create(**validated_data)
         ingredients = request.data['ingredients']
         recipe.tags.set(tags)
-
-        for ingredient in ingredients:
-            obj = Ingredient.objects.get(id=ingredient['id'])
-            IngredientRecipeRelation.objects.create(
-                recipe=recipe,
-                ingredient=obj,
-                amount=ingredient['amount'],
-            )
+        
+        relation_creator(recipe, ingredients)
 
         recipe.save()
 
@@ -212,7 +212,10 @@ class PostRecipeSerializer(RecipeSerializer):
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
         instance.image = validated_data.get('image', instance.image)
-        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+        instance.cooking_time = validated_data.get(
+            'cooking_time',
+            instance.cooking_time
+        )
 
         tags = validated_data.get('tags')
         if tags:
@@ -225,14 +228,8 @@ class PostRecipeSerializer(RecipeSerializer):
             for ingredient in old_ingredients_relations:
                 instance.ingredients.remove(ingredient)
 
-            # Создание новых
-            for ingredient in ingredients:
-                obj = Ingredient.objects.get(id=ingredient['id'])
-                IngredientRecipeRelation.objects.create(
-                    recipe=instance,
-                    ingredient=obj,
-                    amount=ingredient['amount'],
-                )
+            # Создание новых        
+            relation_creator(instance, ingredients)
 
         instance.save()
 
@@ -307,11 +304,11 @@ class PostRecipeSerializer(RecipeSerializer):
 
 
 class SubscriptionSerializer(UserSerializer):
-    recipes_count = serializers.SerializerMethodField()
+    recipes_count = serializers.IntegerField(
+        source='recipes.count',
+        read_only=True
+    )
     recipes = serializers.SerializerMethodField()
-
-    def get_recipes_count(self, author):
-        return len(author.recipes.all())
     
     def get_recipes(self, author):
         limit_value = self.context.get('request').GET.get('recipes_limit')

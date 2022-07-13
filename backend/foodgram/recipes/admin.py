@@ -1,9 +1,24 @@
 from django.contrib import admin
-from django.contrib.admin.views.main import ChangeList
 
-from .models import Tag, Ingredient, Recipe
+from .models import (
+    Tag,
+    Ingredient,
+    Recipe,
+    Favorite,
+    ShoppingCart,
+    IngredientRecipeRelation
+)
 
 EMPTY = '-пусто-'
+
+
+class TagInline(admin.StackedInline):
+    model = Recipe.tags.through
+
+
+class IngredientInline(admin.StackedInline):
+    model = IngredientRecipeRelation
+    extra = 1
 
 
 @admin.register(Tag)
@@ -15,6 +30,8 @@ class TagAdmin(admin.ModelAdmin):
         'color',
         'colored_name',
     )
+
+    inlines = (TagInline, )
 
     list_editable = (
         'name', 'slug', 'color',
@@ -31,6 +48,8 @@ class IngredientAdmin(admin.ModelAdmin):
         'name',
         'measurement_unit',
     )
+
+    inlines = (IngredientInline,)
 
     list_editable = (
         'name', 'measurement_unit'
@@ -49,12 +68,60 @@ class RecipeAdmin(admin.ModelAdmin):
         'author',
         'image',
         'text',
-        'cooking_time',
+        'cooking_time'
     )
+
+    inlines = (TagInline, IngredientInline)
 
     list_editable = (
         'name', 'author', 'image', 'text', 'cooking_time'
     )
 
-    search_fields = ('name',)
+    search_fields = ('name', 'author')
+    empty_value_display = EMPTY
+
+
+@admin.register(IngredientRecipeRelation)
+class IngredientRecipeRelation(admin.ModelAdmin):
+    list_display = (
+        'pk',
+        'recipe',
+        'ingredient',
+        'amount'
+    )
+
+    list_editable = (
+        'recipe', 'ingredient', 'amount'
+    )
+
+    empty_value_display = EMPTY
+
+
+@admin.register(Favorite)
+class FavoriteAdmin(admin.ModelAdmin):
+    list_display = (
+        'pk',
+        'user',
+        'recipe',
+    )
+
+    list_editable = (
+        'user', 'recipe'
+    )
+
+    empty_value_display = EMPTY
+
+
+@admin.register(ShoppingCart)
+class ShoppingCartAdmin(admin.ModelAdmin):
+    list_display = (
+        'pk',
+        'user',
+        'recipe',
+    )
+
+    list_editable = (
+        'user', 'recipe'
+    )
+
     empty_value_display = EMPTY
