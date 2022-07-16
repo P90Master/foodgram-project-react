@@ -33,7 +33,6 @@ from .serializers import (
 )
 from .pagination import FoodgramPagination
 from .filters import (
-    FoodgramBaseFilter,
     RecipeFilter,
     IngredientFilter,
 )
@@ -79,7 +78,6 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     pagination_class = FoodgramPagination
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = FoodgramBaseFilter
    
     def get_permissions(self):
         if self.action in ['create', 'list', 'get']:
@@ -160,8 +158,7 @@ class UserViewSet(viewsets.ModelViewSet):
         url_path='subscriptions',
         permission_classes=(IsAuthenticated,),
         serializer_class=SubscriptionSerializer,
-        filter_backends=(DjangoFilterBackend,),
-        filterset_class=FoodgramBaseFilter
+        filter_backends=(DjangoFilterBackend,)
     )
     def subscribtions(self, request):
         user = request.user
@@ -179,7 +176,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    queryset = Recipe.objects.get_queryset().order_by('id')
+    queryset = Recipe.objects.get_queryset().order_by('-id')
     serializer_class = RecipeSerializer
     pagination_class = FoodgramPagination
     filter_backends = (DjangoFilterBackend,)
@@ -252,9 +249,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
+    pagination_class = None
     serializer_class = TagSerializer
-    pagination_class = FoodgramPagination
-    filter_backends = (DjangoFilterBackend,)
 
     def get_permissions(self):
         if self.action in ['list', 'get']:
@@ -268,7 +264,7 @@ class TagViewSet(viewsets.ModelViewSet):
 class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    pagination_class = FoodgramPagination
+    pagination_class = None
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
 

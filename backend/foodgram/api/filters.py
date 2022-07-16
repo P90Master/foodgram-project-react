@@ -15,20 +15,13 @@ def queryset_cutter(queryset, value):
     return queryset[:value] if value > 0 else queryset
 
 
-class FoodgramBaseFilter(rest_framework.FilterSet):
-    limit = rest_framework.NumberFilter(
-        method='limit_filter'
+class RecipeFilter(rest_framework.FilterSet):
+    author = rest_framework.ModelChoiceFilter(
+        queryset=User.objects.all()
     )
-
-    def limit_filter(self, queryset, name, value):
-        return queryset_cutter(queryset, value)
-
-
-class RecipeFilter(FoodgramBaseFilter):
-    author = rest_framework.NumberFilter(
-        field_name='author__id', lookup_expr='exact')
-    tags = rest_framework.CharFilter(
-        field_name='tags__slug', lookup_expr='exact')
+    tags = rest_framework.AllValuesMultipleFilter(
+        field_name='tags__slug'
+    )
     is_favorited = rest_framework.BooleanFilter(
         method='is_favorited_filter'
     )
@@ -39,25 +32,25 @@ class RecipeFilter(FoodgramBaseFilter):
     def is_favorited_filter(self, queryset, name, value):
         user = self.request.user
 
-        if value:
+        if value and not user.is_anonymous:
             return queryset.filter(users__user=user)
 
-        return queryset.exclude(users__user=user)
+        return queryset
     
     def is_in_shopping_cart_filter(self, queryset, name, value):
         user = self.request.user
 
-        if value:
+        if value and not user.is_anonymous:
             return queryset.filter(in_shopping_cart__user=user)
 
-        return queryset.exclude(in_shopping_cart__user=user)
+        return queryset
 
     class Meta:
         model = Recipe
         fields = ('author', 'tags')
 
 
-class IngredientFilter(FoodgramBaseFilter):
+class IngredientFilter(rest_framework.FilterSet):
     name = rest_framework.CharFilter(
         field_name='name', lookup_expr='icontains'
     )
