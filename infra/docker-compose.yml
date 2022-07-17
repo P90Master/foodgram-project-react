@@ -11,13 +11,13 @@ services:
     - ./.env
 
   frontend:
-    image: hoouinkema/foodgram-frontend:v1.0
+    image: hoouinkema/foodgram-frontend:v1.01
 
     volumes:
       - ../frontend/:/app/result_build/
   
   backend:
-    image: hoouinkema/foodgram-backend:v1.0
+    image: hoouinkema/foodgram-backend:v1.01
 
     restart: always
 

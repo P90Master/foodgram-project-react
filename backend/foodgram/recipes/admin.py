@@ -16,9 +16,10 @@ class TagInline(admin.StackedInline):
     model = Recipe.tags.through
 
 
-class IngredientInline(admin.StackedInline):
+class IngredientInline(admin.TabularInline):
     model = IngredientRecipeRelation
     extra = 1
+    min_num = 1
 
 
 @admin.register(Tag)
