@@ -58,5 +58,6 @@ python manage.py collectstatic
 ```
 python manage.py createsuperuser
 ```
+Проект доступен по адресу http://localhost/ (админ-зона http://localhost/admin/)
 ### Авторы
 Telegram: @social_creditor
