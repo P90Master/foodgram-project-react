@@ -22,6 +22,26 @@ DB_PORT=5432
 ```
 docker-compose up -d --build
 ```
+- (Опционально) Образы берутся с DockerHub, при внесении изменений в проект необходимо пересобирать образы:
+```
+# docker-compose.yml
+
+frontend:
+    image: hoouinkema/foodgram-frontend:v1.01
+
+backend:
+    image: hoouinkema/foodgram-backend:v1.01
+```
+Заменить на:
+```
+# docker-compose.yml
+
+frontend:
+  build: ../frontend
+
+backend:
+  build: ../backend
+```
 - Перейти в контейнер с Django:
 ```
 sudo docker exec -it backend bash
