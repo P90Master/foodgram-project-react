@@ -44,7 +44,7 @@ backend:
 ```
 - Перейти в контейнер с Django:
 ```
-sudo docker exec -it backend bash
+sudo docker-compose exec backend bash
 ```
 - Выполнить миграции:
 ```
