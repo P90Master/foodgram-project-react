@@ -54,9 +54,17 @@ python manage.py migrate
 ```
 python manage.py collectstatic
 ```
-- (Опционально) создать суперпользователя:
+- (Опционально) Создать суперпользователя:
 ```
 python manage.py createsuperuser
+```
+- (Опционально) Заполнить БД ингредиентами:
+(Для просмотра id запущенных контейнеров: ```docker ps```)
+```
+docker cp ../data/ingredients.json [ID КОНТЕЙНЕРА BACKEND]:app/
+```
+```
+sudo docker-compose exec backend python manage.py loaddata ingredients.json
 ```
 Проект доступен по адресу http://localhost/ (админ-зона http://localhost/admin/)
 ### Авторы
