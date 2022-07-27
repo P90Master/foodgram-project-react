@@ -1,5 +1,1 @@
-[
-  {"model": "recipes.Tag", "pk": 1, "fields": {"name": "Завтрак", "slug": "breakfast", "color":"32C12C"}},
-  {"model": "recipes.Tag", "pk": 2, "fields": {"name": "Обед", "slug": "lunch", "color":"FF9A00"}},
-  {"model": "recipes.Tag", "pk": 3, "fields": {"name": "Ужин", "slug": "dinner", "color":"00A5F9"}}
-]
+[{"model": "recipes.Tag", "pk": 1, "fields": {"name": "Завтрак", "slug": "breakfast", "color":"32C12C"}},{"model": "recipes.Tag", "pk": 2, "fields": {"name": "Обед", "slug": "lunch", "color":"FF9A00"}},{"model": "recipes.Tag", "pk": 3, "fields": {"name": "Ужин", "slug": "dinner", "color":"00A5F9"}}]
