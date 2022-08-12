@@ -5,6 +5,8 @@
 - Python 3.7
 - Django 2.2.19
 - React.js 17.0.1
+- PostgreSQL 13.0
+- Nginx 1.19.3
 - Docker 20.10.12 (Docker Compose 2.6.1)
 ### Запуск проекта
 - Склонировать репозиторий
