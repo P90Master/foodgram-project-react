@@ -76,5 +76,3 @@ docker cp ../data/tags.json [ID КОНТЕЙНЕРА BACKEND]:app/
 sudo docker-compose exec backend python manage.py loaddata tags.json
 ```
 Проект доступен по адресу http://localhost/ (админ-зона http://localhost/admin/)
-### Авторы
-Telegram: @social_creditor
